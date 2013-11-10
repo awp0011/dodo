@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context-3.1.xsd">
+
+<!-- 	<bean id="iBatisSessionFactory" class="com.sds.sp.ssi.ibatis.IBatis3SQLSessionFactoryBean"
+		scope="singleton">
+		<property name="configLocation" value="sqlmap.xml"></property>
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	<bean id="iBatisDAOSupport" class="com.sds.sp.ssi.ibatis.IBatisDAOSupport">
+	</bean> -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	
+	<bean id="environmentVariablesConfiguration"
+		class="org.jasypt.encryption.pbe.config.EnvironmentStringPBEConfig"
+		p:algorithm="PBEWITHMD5ANDDES" p:passwordEnvName="APP_ENCRYPTION_PASSWORD" />
+
+	<bean id="configurationEncryptor" class="org.jasypt.encryption.pbe.StandardPBEStringEncryptor"
+		p:config-ref="environmentVariablesConfiguration" />
+	<bean id="propertyConfigurer"
+		class="org.jasypt.spring31.properties.EncryptablePropertyPlaceholderConfigurer">
+		<constructor-arg ref="configurationEncryptor" />
+		<property name="locations">
+			<list>
+				<value>
+					classpath:jdbc.properties
+				</value>
+			</list>
+		</property>
+	</bean>
+	<context:property-placeholder location="classpath:jdbc.properties" />
+	<bean id="commonsConfigurationFactoryBean" class="org.wpgn.dodo.commons.ConfigurationFactoryBean"
+		p:encryptor-ref="configurationEncryptor" p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
+		<constructor-arg>
+			<bean class="org.apache.commons.configuration.PropertiesConfiguration">
+				<constructor-arg value="jdbc.properties" />
+			</bean>
+		</constructor-arg>
+	</bean>
+	<bean id="propertiesConfiguration" factory-bean="&amp;commonsConfigurationFactoryBean"
+		factory-method="getConfiguration" />
+
+	<bean class="org.springframework.jdbc.core.JdbcTemplate"
+		p:dataSource-ref="dataSource" />
+	<!-- configure data base connection pool by using C3P0 -->
+	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"
+		destroy-method="close">
+		<property name="driverClass" value="${jdbc.driverClassName}" />
+		<property name="jdbcUrl" value="${jdbc.databaseURL}" />
+		<property name="user" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+		<property name="initialPoolSize" value="10" />
+		<property name="minPoolSize" value="10" />
+		<property name="maxPoolSize" value="15" />
+		<property name="acquireIncrement" value="1" />
+		<property name="maxIdleTime" value="5" />
+	</bean>
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="submit*" propagation="REQUIRED"
+				rollback-for="java.lang.Exception" />
+			<tx:method name="add*" propagation="REQUIRED" rollback-for="java.lang.Exception" />
+			<tx:method name="del*" propagation="REQUIRED" rollback-for="java.lang.Exception" />
+			<tx:method name="upd*" propagation="REQUIRED" rollback-for="java.lang.Exception" />
+			<tx:method name="save*" propagation="REQUIRED"
+				rollback-for="java.lang.Exception" />
+			<tx:method name="query*" read-only="true" />
+			<tx:method name="find*" read-only="true" />
+			<tx:method name="get*" read-only="true" />
+			<tx:method name="view*" read-only="true" />
+			<tx:method name="search*" read-only="true" />
+			<tx:method name="check*" read-only="true" />
+			<tx:method name="is*" read-only="true" />
+			<tx:method name="*" propagation="REQUIRED" rollback-for="java.lang.Exception" />
+		</tx:attributes>
+	</tx:advice>
+	<aop:config>
+		<aop:pointcut id="serviceMethod"
+			expression="execution(* org.wpgn.dodo.db.service.*.*(..))" />
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="serviceMethod" />
+	</aop:config>
+</beans>

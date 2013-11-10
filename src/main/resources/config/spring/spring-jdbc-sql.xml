@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:p="http://www.springframework.org/schema/p" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+	<bean id="iEmployeeDao" class="org.wpgn.dodo.db.dao.impl.EmployeeDaoImpl">
+		<property name="mysqlSqlScriptMonth">
+			<value>
+             <![CDATA[
+            SELECT   e.id,    e.name,  e.age,	  e.birthday,	  p.name     AS position_name,
+						  d.name     AS deprName,  MONTH(e.birthday) AS birthmonth
+			FROM t_employee e,	  t_position p,	  t_department d
+			WHERE e.position = p.id    AND e.dept_id = d.id
+						AND MONTH(e.birthday)=?
+             ]]>
+			</value>
+		</property>
+		
+		<property name="mysqlSqlScriptWeek">
+			<value>
+             <![CDATA[
+            SELECT   e.id,    e.name,  e.age,	  e.birthday,	  p.name     AS position_name,
+						  d.name     AS deprName
+			FROM t_employee e,	  t_position p,	  t_department d
+			WHERE e.position = p.id    AND e.dept_id = d.id
+						AND WEEK(e.birthday,0)=?
+             ]]>
+			</value>
+		</property>
+		
+	</bean>
+</beans>
